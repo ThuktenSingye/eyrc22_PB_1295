@@ -69,6 +69,25 @@ def perspective_transform(image):
     """   
     warped_image = [] 
 #################################  ADD YOUR CODE HERE  ###############################
+    topLeft = [0,0]
+    topRight = [512,0]
+    bottomLeft = [0,512]
+    bottomRight = [512,512]
+    _, ArUco_corners = task_1b.detect_ArUco_details(image)
+    for id, value in ArUco_corners.items():
+        if id == 1:
+            bottomRight = [value[2][0], value[2][1]]
+        elif id == 2:
+            bottomLeft = [value [3][0], value[3][1]]
+        elif id == 3:
+            topLeft = [value[0][0], value[0][1]]
+        elif id == 4:
+            topRight = [value[1][0], value[1][1]]
+
+    src = numpy.float32([topLeft,bottomLeft, topRight, bottomRight])
+    det = numpy.float32([[0,0],[0,512], [512,0],[512,512]])
+    M = cv2.getPerspectiveTransform(src, det)
+    warped_image = cv2.warpPerspective(image,M,(512,512))
     
 ######################################################################################
 
@@ -108,7 +127,23 @@ def transform_values(image):
     """   
     scene_parameters = []
 #################################  ADD YOUR CODE HERE  ###############################
- 
+    pi = 22/ 7
+    cX =0
+    cY = 0
+    angle = 0
+    ArUco_details_dict, _ = task_1b.detect_ArUco_details(image)
+    for ids, coord in ArUco_details_dict.items():
+        if ids == 5:
+            cX = coord[0][0]
+            cY = coord[0][1]
+            angle = coord[1]
+    c_x = (256-cX) * 0.9550 / 256
+    c_y = (cY-256) * 0.9550 / 256
+    if angle >=0:
+        c_angle = (-180 - angle) * pi/180
+    else:
+        c_angle = (180 + angle) * pi/180
+    scene_parameters = [c_x, c_y, c_angle]
 ######################################################################################
 
     return scene_parameters
@@ -142,7 +177,9 @@ def set_values(scene_parameters):
     """   
     aruco_handle = sim.getObject('/aruco_5')
 #################################  ADD YOUR CODE HERE  ###############################
-
+    x, y, angle = scene_parameters
+    sim.setObjectPosition(aruco_handle,sim.handle_world, [x, y, 0.03])
+    sim.setObjectOrientation(aruco_handle, -1, [0,0,angle])
 ######################################################################################
 
     return None
@@ -152,7 +189,29 @@ if __name__ == "__main__":
     sim = client.getObject('sim')
     task_1b = __import__('task_1b')
 #################################  ADD YOUR CODE HERE  ################################
+    video = cv2.VideoCapture("1295.mp4")
+    #video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    #video.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
+    if not video.isOpened():
+        print("Cannot open the video file")
+        exit()
+    while video.isOpened():
+        ret, frame = video.read()
+        if not ret:
+            print("Cant't receive frames (Stream end?). Exiting ...")
+            break
+        ArUco_details_dict, ArUco_corners = task_1b.detect_ArUco_details(frame)
+        wrapped_image = perspective_transform(frame)
+        scene_parameters = transform_values(wrapped_image)
+        ##############################################
+        print(f"Scene Parameter = {scene_parameters}")
+        set_values(scene_parameters)
 
+        cv2.imshow("Frame", frame)
+        if cv2.waitKey(1) and 0xFF == ord("q"):
+            break
+    video.release()
+    cv2.destroyAllWindows()
 #######################################################################################
 
 
