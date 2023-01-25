@@ -150,6 +150,19 @@ def check_path(graph, current_node, closed_list, target_node):
 		if key not in closed_list:
 			new_path[key] = euclidean_distance(key, target_node)
 	return new_path
+def get_move(moves, direction, coordinate):
+	move ={}
+	if coordinate[0] == coordinate[1]: # x same and y different
+		if coordinate[2] > coordinate[3]:
+			move[direction[moves[0]]] = moves[0]
+		elif coordinate[2] < coordinate[3]:
+			move[direction[moves[1]]] = moves[1]
+	elif coordinate[2]== coordinate[3]:# y same and x different
+		if coordinate[0] > coordinate[1]:
+			move[direction[moves[2]]] = moves[2]
+		elif coordinate[0] < coordinate[1]:
+			move[direction[moves[3]]] = moves[3]
+	return move
 
 ##############################################################
 
@@ -434,7 +447,16 @@ def paths_to_moves(paths, traffic_signal):
 
 	##############	ADD YOUR CODE HERE	##############
 	direction = 'north'
-    
+	north= {'STRAIGHT':'north', 'REVERSE':'south','LEFT':'west', 'RIGHT':'east'}
+	south = {'STRAIGHT':'south', 'REVERSE':'north','LEFT':'east', 'RIGHT':'west'}
+	east = {'STRAIGHT':'east', 'REVERSE':'west','LEFT':'north', 'RIGHT':'south'}
+	west ={'STRAIGHT':'west', 'REVERSE':'east','LEFT':'south', 'RIGHT':'north'}
+
+	north_moves = ['STRAIGHT', 'REVERSE', 'LEFT', 'RIGHT']
+	south_moves =['REVERSE', 'STRAIGHT', 'RIGHT', 'LEFT']
+	east_moves =['LEFT', 'RIGHT', 'REVERSE', 'STRAIGHT']
+	west_moves = ['RIGHT', 'LEFT','STRAIGHT', 'REVERSE']
+	
 	for i in range(len(paths)-1):
 		current_node = paths[i]
 		next_node = paths[i+1]
@@ -442,77 +464,20 @@ def paths_to_moves(paths, traffic_signal):
 		if current_node in traffic_signal:
 			list_moves.append("WAIT_5")
 		if direction == 'north':
-
-			if coordinate[0] == coordinate[1]: # x same and y different
-				if coordinate[2] > coordinate[3]:
-					list_moves.append("STRAIGHT")
-					direction = 'north'
-				elif coordinate[2] < coordinate[3]:
-					list_moves.append("REVERSE")
-					direction = 'south'
-				continue
-			elif coordinate[2]== coordinate[3]:# y same and x different
-				if coordinate[0] > coordinate[1]:
-					list_moves.append("LEFT")
-					direction = 'west'
-				elif coordinate[0] < coordinate[1]:
-					list_moves.append('RIGHT')
-					direction = 'east'
-				continue
-		if direction == "west":
+			move = get_move(north_moves, north, coordinate)
 			
-			if coordinate[0] == coordinate[1]: # x same and y different
-				if coordinate[2] > coordinate[3]:
-					list_moves.append("RIGHT")
-					direction = 'north'
-				elif coordinate[2] < coordinate[3]:
-					list_moves.append("LEFT")
-					direction = 'south'
-				continue
-			elif coordinate[2]== coordinate[3]:# y same and x different
-				if coordinate[0] > coordinate[1]:
-					list_moves.append("STRAIGHT")
-					direction = 'west'
-				elif coordinate[0] < coordinate[1]:
-					list_moves.append('REVERSE')
-					direction = 'east'
-				continue
-		if direction =="east":
-		
-			if coordinate[0] == coordinate[1]: # x same and y different
-				if coordinate[2] > coordinate[3]:
-					list_moves.append("LEFT")
-					direction = 'north'
-				elif coordinate[2] < coordinate[3]:
-					list_moves.append("RIGHT")
-					direction = 'south'
-				continue
-			elif coordinate[2]== coordinate[3]:# y same and x different
-				if coordinate[0] > coordinate[1]:
-					list_moves.append("REVERSE")
-					direction = 'west'
-				elif coordinate[0] < coordinate[1]:
-					list_moves.append('STRAIGHT')
-					direction = 'east'
-				continue
-		if direction =="south":
+		if direction == 'west':
+			move = get_move(west_moves, west, coordinate)
 
-			if coordinate[0] == coordinate[1]: # x same and y different
-				if coordinate[2] > coordinate[3]:
-					list_moves.append("REVERSE")
-					direction = 'north'
-				elif coordinate[2] < coordinate[3]:
-					list_moves.append("STRAIGHT")
-					direction = 'south'
-				continue
-			elif coordinate[2]== coordinate[3]:# y same and x different
-				if coordinate[0] > coordinate[1]:
-					list_moves.append("RIGHT")
-					direction = 'west'
-				elif coordinate[0] < coordinate[1]:
-					list_moves.append('LEFT')
-					direction = 'east'
-				continue
+		if direction == 'east':
+			move = get_move(east_moves, east, coordinate)
+			
+		if direction == 'south':
+			move = get_move(south_moves, south, coordinate)
+		key, value = list(move.items())[0]
+		list_moves.append(value)
+		direction = key
+		
 		
 	##################################################
 	return list_moves
